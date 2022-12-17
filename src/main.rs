@@ -1,42 +1,117 @@
 use gtk::prelude::*;
-use gtk::{Application, ApplicationWindow, Button};
+use relm4::prelude::*;
+use std::io::{self, Write};
+use tokio::sync::mpsc;
 
-const APP_ID: &str = "org.gtk_rs.HelloWorld2";
+use rbmini::connection::RbManager;
+use rbmini::message::{decode_rb_message, rb_checksum, RbMessage};
 
-fn main() {
-    // Create a new application
-    let app = Application::builder().application_id(APP_ID).build();
-
-    // Connect to "activate" signal of `app`
-    app.connect_activate(build_ui);
-
-    // Run the application
-    app.run();
+struct DashboardApp {
+    telemetry: RbMessage,
 }
 
-fn build_ui(app: &Application) {
-    // Create a button with label and margins
-    let button = Button::builder()
-        .label("Press me!")
-        .margin_top(12)
-        .margin_bottom(12)
-        .margin_start(12)
-        .margin_end(12)
-        .build();
+#[derive(Debug)]
+enum Msg {
+    Update(RbMessage),
+}
 
-    // Connect to "clicked" signal of `button`
-    button.connect_clicked(move |button| {
-        // Set the label to "Hello World!" after the button has been clicked on
-        button.set_label("Hello World!");
-    });
+#[relm4::component]
+impl SimpleComponent for DashboardApp {
+    type Init = RbMessage;
+    type Input = Msg;
+    type Output = ();
 
-    // Create a window
-    let window = ApplicationWindow::builder()
-        .application(app)
-        .title("My GTK App")
-        .child(&button)
-        .build();
+    view! {
+        gtk::Window {
+            set_title: Some("Openlaps Dashboard"),
+            set_default_size: (800, 600),
 
-    // Present window
-    window.present();
+            gtk::Box {
+                set_orientation: gtk::Orientation::Vertical,
+                set_spacing: 5,
+                set_margin_all: 5,
+
+                gtk::Label {
+                    #[watch]
+                    set_label: &format!("Latitude: {}", model.telemetry.gps_coordinates().0),
+                    set_margin_all: 5,
+                },
+                gtk::Label {
+                    #[watch]
+                    set_label: &format!("Longitude: {}", model.telemetry.gps_coordinates().1),
+                    set_margin_all: 5,
+                },
+            }
+        }
+    }
+
+    // Initialize the component.
+    fn init(
+        telemetry: Self::Init,
+        root: &Self::Root,
+        _sender: ComponentSender<Self>,
+    ) -> ComponentParts<Self> {
+        let model = DashboardApp { telemetry };
+
+        // Insert the code generation of the view! macro here
+        let widgets = view_output!();
+
+        tokio::spawn(async move {
+            println!("Creating a new RbConnecting handler");
+            let mut rb = match RbManager::new().await {
+                Err(e) => {
+                    panic!("{}", e);
+                }
+                Ok(rb) => rb,
+            };
+
+            println!("connecting to racebox mini");
+            let rc = match rb.connect().await {
+                Err(e) => {
+                    panic!("{}", e);
+                }
+                Ok(conn) => conn,
+            };
+
+            let (tx, mut rx) = mpsc::channel(32);
+
+            tokio::spawn(async move {
+                if let Err(err) = rc.stream(tx).await {
+                    panic!("Stream failed: {}", err)
+                }
+            });
+
+            let mut checksum_failures = 0;
+            loop {
+                while let Some(msg) = rx.recv().await {
+                    if !rb_checksum(&msg.value) {
+                        checksum_failures += 1;
+                    }
+                    let rb_msg = decode_rb_message(&msg.value);
+                    print!("{esc}[2J{esc}[1;1H {d}", esc = 27 as char, d = rb_msg);
+                    print!("Checksum failures {}", checksum_failures);
+                    io::stdout().flush().expect("Couldn't flush stdout");
+                }
+            }
+        });
+
+        ComponentParts { model, widgets }
+    }
+
+    fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
+        match msg {
+            Msg::Update(t) => {
+                self.telemetry = t;
+            }
+        }
+    }
+}
+
+#[tokio::main]
+async fn main() {
+    let app = RelmApp::new("org.openlaps.dashboard");
+
+    let telemetry = rbmini::message::RbMessage::new();
+
+    app.run::<DashboardApp>(telemetry);
 }
