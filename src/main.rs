@@ -42,7 +42,7 @@ impl SimpleComponent for DashboardApp {
                 },
                 gtk::Label {
                     #[watch]
-                    set_label: &format!("Speed: {}", model.telemetry.speed),
+                    set_label: &format!("Speed: {:.1}", model.telemetry.speed()),
                     set_margin_all: 5,
                 },
             }

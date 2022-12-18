@@ -1286,7 +1286,7 @@ dependencies = [
 [[package]]
 name = "rbmini"
 version = "0.1.0"
-source = "git+https://github.com/transitorykris/rbmini#158c4d750d394f1966f91f8877d5c8df50d9855f"
+source = "git+https://github.com/transitorykris/rbmini#13bae0ad07166ad3e6ae22493e179fc107db0464"
 dependencies = [
  "bincode",
  "btleplug",
