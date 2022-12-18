@@ -49,15 +49,17 @@ impl SimpleComponent for DashboardApp {
     fn init(
         telemetry: Self::Init,
         root: &Self::Root,
-        _sender: ComponentSender<Self>,
+        sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let model = DashboardApp { telemetry };
 
         // Insert the code generation of the view! macro here
         let widgets = view_output!();
 
+        // We use a seperate thread to talk to the racebox mini
         tokio::spawn(async move {
-            println!("Creating a new RbConnecting handler");
+            // Connect to a racebox mini
+            // XXX This is all very explode-y right now
             let mut rb = match RbManager::new().await {
                 Err(e) => {
                     panic!("{}", e);
@@ -65,7 +67,6 @@ impl SimpleComponent for DashboardApp {
                 Ok(rb) => rb,
             };
 
-            println!("connecting to racebox mini");
             let rc = match rb.connect().await {
                 Err(e) => {
                     panic!("{}", e);
@@ -75,23 +76,27 @@ impl SimpleComponent for DashboardApp {
 
             let (tx, mut rx) = mpsc::channel(32);
 
+            // Start another thread to stream from the racebox mini
             tokio::spawn(async move {
                 if let Err(err) = rc.stream(tx).await {
-                    panic!("Stream failed: {}", err)
+                    panic!("{}", err)
                 }
             });
 
+            // Our receive loop, get a message from the racebox, send it to our app
             let mut checksum_failures = 0;
-            loop {
-                while let Some(msg) = rx.recv().await {
-                    if !rb_checksum(&msg.value) {
-                        checksum_failures += 1;
-                    }
-                    let rb_msg = decode_rb_message(&msg.value);
-                    print!("{esc}[2J{esc}[1;1H {d}", esc = 27 as char, d = rb_msg);
-                    print!("Checksum failures {}", checksum_failures);
-                    io::stdout().flush().expect("Couldn't flush stdout");
+            while let Some(msg) = rx.recv().await {
+                if !rb_checksum(&msg.value) {
+                    checksum_failures += 1;
                 }
+                let rb_msg = decode_rb_message(&msg.value);
+                // Just here to aid development
+                print!("{esc}[2J{esc}[1;1H {d}", esc = 27 as char, d = rb_msg);
+                print!("Checksum failures {}", checksum_failures);
+                io::stdout().flush().expect("Couldn't flush stdout");
+
+                // Send an update message to our app
+                sender.input(Msg::Update(rb_msg));
             }
         });
 
