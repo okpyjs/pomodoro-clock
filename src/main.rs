@@ -29,6 +29,7 @@ impl SimpleComponent for DashboardApp {
         gtk::Window {
             set_title: Some("Openlaps Dashboard"),
             set_default_size: (800, 600),
+            set_fullscreened: true,
 
             gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
@@ -56,9 +57,6 @@ impl SimpleComponent for DashboardApp {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let model = DashboardApp { telemetry };
-
-        // Take up the full touchscreen
-        root.set_fullscreened(true);
 
         // Insert the code generation of the view! macro here
         let widgets = view_output!();
