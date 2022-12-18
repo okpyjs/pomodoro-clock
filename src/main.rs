@@ -57,6 +57,9 @@ impl SimpleComponent for DashboardApp {
     ) -> ComponentParts<Self> {
         let model = DashboardApp { telemetry };
 
+        // Take up the full touchscreen
+        root.set_fullscreened(true);
+
         // Insert the code generation of the view! macro here
         let widgets = view_output!();
 
