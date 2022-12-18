@@ -33,12 +33,12 @@ impl SimpleComponent for DashboardApp {
 
                 gtk::Label {
                     #[watch]
-                    set_label: &format!("Latitude: {}", model.telemetry.gps_coordinates().0),
+                    set_label: &format!("GPS Coordinates: {}", model.telemetry.gps_coordinates()),
                     set_margin_all: 5,
                 },
                 gtk::Label {
                     #[watch]
-                    set_label: &format!("Longitude: {}", model.telemetry.gps_coordinates().1),
+                    set_label: &format!("Speed: {}", model.telemetry.speed),
                     set_margin_all: 5,
                 },
             }
