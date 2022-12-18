@@ -1,8 +1,10 @@
 use gtk::prelude::*;
 use relm4::prelude::*;
 use std::io::{self, Write};
+use std::path::Path;
 use tokio::sync::mpsc;
 
+use logger::Logger;
 use rbmini::connection::RbManager;
 use rbmini::message::{decode_rb_message, rb_checksum, RbMessage};
 
@@ -74,6 +76,9 @@ impl SimpleComponent for DashboardApp {
                 Ok(conn) => conn,
             };
 
+            // Create a logger to record telemetry to
+            let logger = Logger::new(Path::new("./"));
+
             let (tx, mut rx) = mpsc::channel(32);
 
             // Start another thread to stream from the racebox mini
@@ -97,7 +102,12 @@ impl SimpleComponent for DashboardApp {
 
                 // Send an update message to our app
                 sender.input(Msg::Update(rb_msg));
+                if logger.write("A line").is_err() {
+                    continue; // do nothing for now
+                }
             }
+
+            // XXX we don't have a decent way to shut down!
         });
 
         ComponentParts { model, widgets }
