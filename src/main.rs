@@ -8,6 +8,8 @@ use logger::Logger;
 use rbmini::connection::RbManager;
 use rbmini::message::{decode_rb_message, rb_checksum, RbMessage};
 
+const LOG_FILE: &str = "/tmp/openlaps_dashboard_testing.db";
+
 struct DashboardApp {
     telemetry: RbMessage,
 }
@@ -77,7 +79,7 @@ impl SimpleComponent for DashboardApp {
             };
 
             // Create a logger to record telemetry to
-            let logger = Logger::new(Path::new("./"));
+            let logger = Logger::new(Path::new(LOG_FILE));
 
             let (tx, mut rx) = mpsc::channel(32);
 
