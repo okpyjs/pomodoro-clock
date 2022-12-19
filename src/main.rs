@@ -12,11 +12,13 @@ const LOG_FILE: &str = "/tmp/openlaps_dashboard_testing.db";
 
 struct DashboardApp {
     telemetry: RbMessage,
+    status: String,
 }
 
 #[derive(Debug)]
 enum Msg {
     Update(RbMessage),
+    Status(String),
 }
 
 #[relm4::component]
@@ -46,6 +48,11 @@ impl SimpleComponent for DashboardApp {
                     set_label: &format!("Speed: {:.1}", model.telemetry.speed()),
                     set_margin_all: 5,
                 },
+                gtk::Label {
+                    #[watch]
+                    set_label: &model.status,
+                    set_margin_all: 5,
+                }
             }
         }
     }
@@ -56,7 +63,10 @@ impl SimpleComponent for DashboardApp {
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let model = DashboardApp { telemetry };
+        let model = DashboardApp {
+            telemetry,
+            status: String::new(),
+        };
 
         // Insert the code generation of the view! macro here
         let widgets = view_output!();
@@ -65,6 +75,7 @@ impl SimpleComponent for DashboardApp {
         tokio::spawn(async move {
             // Connect to a racebox mini
             // XXX This is all very explode-y right now
+            sender.input(Msg::Status("Setting up RaceBox mini manager".to_string()));
             let mut rb = match RbManager::new().await {
                 Err(e) => {
                     panic!("{}", e);
@@ -72,12 +83,15 @@ impl SimpleComponent for DashboardApp {
                 Ok(rb) => rb,
             };
 
+            sender.input(Msg::Status("Connecting to RaceBox mini".to_string()));
             let rc = match rb.connect().await {
                 Err(e) => {
+                    sender.input(Msg::Status("Failed to connect to RaceBox mini".to_string()));
                     panic!("{}", e);
                 }
                 Ok(conn) => conn,
             };
+            sender.input(Msg::Status("".to_string()));
 
             // Create a logger to record telemetry to
             let logger = Logger::new(Path::new(LOG_FILE));
@@ -120,6 +134,9 @@ impl SimpleComponent for DashboardApp {
         match msg {
             Msg::Update(t) => {
                 self.telemetry = t;
+            }
+            Msg::Status(s) => {
+                self.status = s;
             }
         }
     }
