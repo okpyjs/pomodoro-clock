@@ -50,6 +50,11 @@ impl SimpleComponent for DashboardApp {
                 },
                 gtk::Label {
                     #[watch]
+                    set_label: &format!("GPS Fix: {}", model.telemetry.is_valid_fix()),
+                    set_margin_all: 5,
+                },
+                gtk::Label {
+                    #[watch]
                     set_label: &model.status,
                     set_margin_all: 5,
                 }
