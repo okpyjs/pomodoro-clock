@@ -126,11 +126,12 @@ impl SimpleComponent for DashboardApp {
                 print!("Checksum failures {}", checksum_failures);
                 io::stdout().flush().expect("Couldn't flush stdout");
 
-                // Send an update message to our app
-                sender.input(Msg::Update(rb_msg));
-                if logger.write("A line").is_err() {
+                if logger.write(&rb_msg.to_json()).is_err() {
                     continue; // do nothing for now
                 }
+
+                // Send an update message to our app
+                sender.input(Msg::Update(rb_msg));
             }
 
             // XXX we don't have a decent way to shut down!
