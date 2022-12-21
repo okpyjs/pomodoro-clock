@@ -1,16 +1,14 @@
 use gtk::prelude::*;
-use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Request, Response, Server};
 use relm4::prelude::*;
-use std::convert::Infallible;
 use std::io::{self, Write};
-use std::net::SocketAddr;
 use std::path::Path;
 use tokio::sync::mpsc;
 
 use logger::Logger;
 use rbmini::connection::RbManager;
 use rbmini::message::{decode_rb_message, rb_checksum, RbMessage};
+
+mod http;
 
 const LOG_FILE: &str = "/tmp/openlaps_dashboard_testing.db";
 
@@ -152,25 +150,11 @@ impl SimpleComponent for DashboardApp {
     }
 }
 
-async fn handle(_: Request<Body>) -> Result<Response<Body>, Infallible> {
-    // Create a logger to record telemetry to
-    // XXX this is only temporary, needs to be passed as part of context
-    let logger = Logger::new(Path::new(LOG_FILE));
-    let value = logger.get_last().unwrap();
-    Ok(Response::new(value.into()))
-}
-
 #[tokio::main]
 async fn main() {
     // Start the HTTP server
     tokio::spawn(async move {
-        let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-        let make_svc = make_service_fn(|_conn| async { Ok::<_, Infallible>(service_fn(handle)) });
-        let server = Server::bind(&addr).serve(make_svc);
-
-        if let Err(e) = server.await {
-            eprintln!("server error: {}", e);
-        }
+        http::start().await;
     });
 
     // Start the GUI
