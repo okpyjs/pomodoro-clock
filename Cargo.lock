@@ -1132,7 +1132,7 @@ dependencies = [
 [[package]]
 name = "logger"
 version = "0.1.0"
-source = "git+https://github.com/transitorykris/logger#58faf6fe8552592f1810d16a85898bb2a460e483"
+source = "git+https://github.com/transitorykris/logger#cf4f2075b1e2d8eb21c7dc492da80dc3a13d70ad"
 dependencies = [
  "rusqlite",
 ]

@@ -153,16 +153,19 @@ impl SimpleComponent for DashboardApp {
 }
 
 async fn handle(_: Request<Body>) -> Result<Response<Body>, Infallible> {
-    Ok(Response::new("Hello, World!".into()))
+    // Create a logger to record telemetry to
+    // XXX this is only temporary, needs to be passed as part of context
+    let logger = Logger::new(Path::new(LOG_FILE));
+    let value = logger.get_last().unwrap();
+    Ok(Response::new(value.into()))
 }
 
 #[tokio::main]
 async fn main() {
+    // Start the HTTP server
     tokio::spawn(async move {
         let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-
         let make_svc = make_service_fn(|_conn| async { Ok::<_, Infallible>(service_fn(handle)) });
-
         let server = Server::bind(&addr).serve(make_svc);
 
         if let Err(e) = server.await {
@@ -170,9 +173,8 @@ async fn main() {
         }
     });
 
+    // Start the GUI
     let app = RelmApp::new("org.openlaps.dashboard");
-
     let telemetry = rbmini::message::RbMessage::new();
-
     app.run::<DashboardApp>(telemetry);
 }
