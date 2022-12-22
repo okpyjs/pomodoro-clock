@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use geo::geometry::Line;
+use geo::Intersects;
 
 use rbmini::message::RbMessage;
 
@@ -37,6 +38,30 @@ impl Lap {
     // Add a telemetry point to the lap
     fn add_point(&mut self, message: RbMessage) {
         self.telemetry.push(message);
+    }
+
+    // Tests if the last data point intersects the line
+    // XXX this feels odd here
+    fn intersects(&self, line: Line) -> bool {
+        // TODO RbMessage is specific to the racebox mini. We ultimately want
+        // a generic telemetry message and can embed the geo types in that
+        let coord_start_x = self.telemetry[self.telemetry.len() - 2]
+            .gps_coordinates()
+            .latitude();
+        let coord_start_y = self.telemetry[self.telemetry.len() - 2]
+            .gps_coordinates()
+            .longitude();
+        let coord_end_x = self.telemetry[self.telemetry.len() - 1]
+            .gps_coordinates()
+            .latitude();
+        let coord_end_y = self.telemetry[self.telemetry.len() - 1]
+            .gps_coordinates()
+            .longitude();
+        let prev_line = geo::Line::new(
+            geo::coord! {x:coord_start_x, y:coord_start_y},
+            geo::coord! {x:coord_end_x, y:coord_end_y},
+        );
+        prev_line.intersects(&line)
     }
 
     // Creates the next lap starting with the last two points
@@ -77,15 +102,21 @@ impl Session {
     }
 
     // Starts the timer on the outlap
-    fn start() {}
+    fn start() -> Lap {
+        Lap::new(LapType::Out)
+    }
 
-    // Adds details for a completed lap
-    fn add_lap(&mut self, lap: Lap) {
+    // Adds details for a completed lap and returns the next lap
+    fn add_lap(&mut self, lap: Lap) -> Lap {
         self.laps.push(lap);
+        self.laps[self.laps.len()].next()
     }
 
     // Marks the final lap as the inlap and stops the timer
-    fn finish() {}
+    fn finish(&mut self) {
+        let last_lap = self.laps.len() - 1;
+        self.laps[last_lap].lap_type = LapType::In;
+    }
 }
 
 struct Sector {
