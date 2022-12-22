@@ -1,5 +1,6 @@
 mod dashboard;
 mod http;
+mod timer;
 
 #[tokio::main]
 async fn main() {
