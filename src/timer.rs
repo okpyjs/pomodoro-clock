@@ -2,6 +2,7 @@
 
 use geo::geometry::Line;
 use geo::Intersects;
+use std::time;
 
 use rbmini::message::RbMessage;
 
@@ -25,13 +26,20 @@ enum LapType {
 struct Lap {
     lap_type: LapType,
     telemetry: Vec<RbMessage>, // Telemetry datapoints for the lap
+    start_time: time::Instant,
+    end_time: time::Instant,
 }
 
 impl Lap {
     fn new(lap_type: LapType) -> Lap {
+        // XXX should this really be the timestamp from the GPS?
+        let instant = time::Instant::now();
+
         Lap {
             lap_type,
             telemetry: Vec::new(),
+            start_time: instant,
+            end_time: instant, // XXX probably an Option type
         }
     }
 
@@ -66,7 +74,7 @@ impl Lap {
 
     // Creates the next lap starting with the last two points
     // of the current lap (these intersect the start/finish line)
-    fn next(&self) -> Lap {
+    fn next(&mut self) -> Lap {
         let lap_type = match self.lap_type {
             LapType::Out => LapType::Lap(1),
             LapType::Lap(num) => LapType::Lap(num + 1),
@@ -80,10 +88,28 @@ impl Lap {
         // TODO Implement copy on RbMessage
         //telemetry.push(a.clone());
         //telemetry.push(b.clone());
+
+        // TODO The start/end time here is not quite right since the last two locations
+        // intersect the start/finish line, we will need to look at the ratio and
+        // adjust the times accordingly
+
+        // XXX should this really be the timestamp from the GPS?
+        let instant = time::Instant::now();
+
+        self.end_time = instant;
+
         Lap {
             lap_type,
             telemetry,
+            start_time: instant,
+            end_time: instant,
         }
+    }
+
+    // Current time in the lap
+    fn time(&self) -> time::Duration {
+        let now = time::Instant::now();
+        now.duration_since(self.start_time)
     }
 }
 
@@ -109,7 +135,8 @@ impl Session {
     // Adds details for a completed lap and returns the next lap
     fn add_lap(&mut self, lap: Lap) -> Lap {
         self.laps.push(lap);
-        self.laps[self.laps.len()].next()
+        let last_lap = self.laps.len() - 1;
+        self.laps[last_lap].next()
     }
 
     // Marks the final lap as the inlap and stops the timer
