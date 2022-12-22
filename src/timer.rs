@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use geo::geometry::Line;
+
 use rbmini::message::RbMessage;
 
 // The core model and implementation of a lap timer
@@ -12,6 +14,7 @@ use rbmini::message::RbMessage;
 // include these two datapoints as well. We can use the ratio of line
 // segment's two halves to get a more accurate lap time.
 
+#[derive(Debug, PartialEq)]
 enum LapType {
     Out,      // outlap, has not yet crossed start/finish line
     In,       // inlap, did not cross start/finish line
@@ -85,39 +88,6 @@ impl Session {
     fn finish() {}
 }
 
-struct Coordinates {
-    latitude: f32,
-    longitude: f32,
-}
-
-impl Coordinates {
-    // Create a new coordinate
-    fn new(latitude: f32, longitude: f32) -> Coordinates {
-        Coordinates {
-            latitude,
-            longitude,
-        }
-    }
-}
-
-// A georgraphic line segment
-struct Line {
-    start: Coordinates,
-    end: Coordinates,
-}
-
-impl Line {
-    // Create a new geographic line segment
-    fn new(start: Coordinates, end: Coordinates) -> Line {
-        Line { start, end }
-    }
-
-    // Returns true if first and second coordinates intersect the line
-    fn intersects(_first: Coordinates, _second: Coordinates) -> bool {
-        false
-    }
-}
-
 struct Sector {
     start: Line, // Beginning of the sector
     end: Line,   // End of the sector
@@ -154,12 +124,19 @@ impl Track {
 
 #[cfg(test)]
 mod tests {
-    use super::Coordinates;
+    #[test]
+    fn test_lap() {
+        let lap = super::Lap::new(super::LapType::Out);
+        assert_eq!(lap.lap_type, super::LapType::Out);
+        assert_eq!(lap.telemetry.len(), 0);
+    }
 
     #[test]
-    fn test_coordinates() {
-        let c = Coordinates::new(1.234, 5.678);
-        assert_eq!(c.latitude, 1.234);
-        assert_eq!(c.longitude, 5.678);
+    fn test_track() {
+        let sf_line = geo::Line::new(geo::coord! {x:1.0, y:1.0}, geo::coord! {x:2.0, y:2.0});
+        let track = super::Track::new("Sonoma".to_string(), sf_line);
+        assert_eq!(track.name, "Sonoma".to_string());
+        assert_eq!(track.start_finish.start, geo::coord! {x:1.0, y:1.0});
+        assert_eq!(track.start_finish.end, geo::coord! {x:2.0, y:2.0});
     }
 }

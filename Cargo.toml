@@ -13,3 +13,4 @@ relm4-components = "0.5.0-beta.5"
 rbmini = { git = "https://github.com/transitorykris/rbmini" }
 logger = { git = "https://github.com/transitorykris/logger" }
 hyper = { version = "0.14", features = ["full"] }
+geo = "0.23.1"
