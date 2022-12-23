@@ -79,7 +79,6 @@ impl SimpleComponent for DashboardApp {
         // Spawn the core logic of the dashboard
         tokio::spawn(async move {
             updater(sender).await;
-            // XXX we don't have a decent way to shut down!
         });
 
         ComponentParts { model, widgets }
