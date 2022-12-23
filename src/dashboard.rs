@@ -76,60 +76,9 @@ impl SimpleComponent for DashboardApp {
         // Insert the code generation of the view! macro here
         let widgets = view_output!();
 
-        // We use a seperate thread to talk to the racebox mini
+        // Spawn the core logic of the dashboard
         tokio::spawn(async move {
-            // Connect to a racebox mini
-            // XXX This is all very explode-y right now
-            sender.input(Msg::Status("Setting up RaceBox mini manager".to_string()));
-            let mut rb = match RbManager::new().await {
-                Err(e) => {
-                    panic!("{}", e);
-                }
-                Ok(rb) => rb,
-            };
-
-            sender.input(Msg::Status("Connecting to RaceBox mini".to_string()));
-            let rc = match rb.connect().await {
-                Err(e) => {
-                    sender.input(Msg::Status("Failed to connect to RaceBox mini".to_string()));
-                    panic!("{}", e);
-                }
-                Ok(conn) => conn,
-            };
-            sender.input(Msg::Status("".to_string()));
-
-            // Create a logger to record telemetry to
-            let logger = Logger::new(Path::new(LOG_FILE));
-
-            let (tx, mut rx) = mpsc::channel(32);
-
-            // Start another thread to stream from the racebox mini
-            tokio::spawn(async move {
-                if let Err(err) = rc.stream(tx).await {
-                    panic!("{}", err)
-                }
-            });
-
-            // Our receive loop, get a message from the racebox, send it to our app
-            let mut checksum_failures = 0;
-            while let Some(msg) = rx.recv().await {
-                if !rb_checksum(&msg.value) {
-                    checksum_failures += 1;
-                }
-                let rb_msg = decode_rb_message(&msg.value);
-                // Just here to aid development
-                print!("{esc}[2J{esc}[1;1H {d}", esc = 27 as char, d = rb_msg);
-                print!("Checksum failures {}", checksum_failures);
-                io::stdout().flush().expect("Couldn't flush stdout");
-
-                if logger.write(&rb_msg.to_json()).is_err() {
-                    continue; // do nothing for now
-                }
-
-                // Send an update message to our app
-                sender.input(Msg::Update(rb_msg));
-            }
-
+            updater(sender).await;
             // XXX we don't have a decent way to shut down!
         });
 
@@ -146,6 +95,63 @@ impl SimpleComponent for DashboardApp {
             }
         }
     }
+}
+
+// For lack of a better name, this is the core logic
+async fn updater(sender: ComponentSender<DashboardApp>) {
+    // Connect to a racebox mini
+    // XXX This is all very explode-y right now
+    sender.input(Msg::Status("Setting up RaceBox mini manager".to_string()));
+    let mut rb = match RbManager::new().await {
+        Err(e) => {
+            panic!("{}", e);
+        }
+        Ok(rb) => rb,
+    };
+
+    sender.input(Msg::Status("Connecting to RaceBox mini".to_string()));
+    let rc = match rb.connect().await {
+        Err(e) => {
+            sender.input(Msg::Status("Failed to connect to RaceBox mini".to_string()));
+            panic!("{}", e);
+        }
+        Ok(conn) => conn,
+    };
+    sender.input(Msg::Status("".to_string()));
+
+    // Create a logger to record telemetry to
+    let logger = Logger::new(Path::new(LOG_FILE));
+
+    let (tx, mut rx) = mpsc::channel(32);
+
+    // Start another thread to stream from the racebox mini
+    tokio::spawn(async move {
+        if let Err(err) = rc.stream(tx).await {
+            panic!("{}", err)
+        }
+    });
+
+    // Our receive loop, get a message from the racebox, send it to our app
+    let mut checksum_failures = 0;
+    while let Some(msg) = rx.recv().await {
+        if !rb_checksum(&msg.value) {
+            checksum_failures += 1;
+        }
+        let rb_msg = decode_rb_message(&msg.value);
+        // Just here to aid development
+        print!("{esc}[2J{esc}[1;1H {d}", esc = 27 as char, d = rb_msg);
+        print!("Checksum failures {}", checksum_failures);
+        io::stdout().flush().expect("Couldn't flush stdout");
+
+        if logger.write(&rb_msg.to_json()).is_err() {
+            continue; // do nothing for now
+        }
+
+        // Send an update message to our app
+        sender.input(Msg::Update(rb_msg));
+    }
+
+    // XXX we don't have a decent way to shut down!
 }
 
 pub fn start() {
