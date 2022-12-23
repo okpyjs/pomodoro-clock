@@ -182,17 +182,19 @@ impl Track {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn test_lap() {
-        let lap = super::Lap::new(super::LapType::Out);
-        assert_eq!(lap.lap_type, super::LapType::Out);
+        let lap = Lap::new(LapType::Out);
+        assert_eq!(lap.lap_type, LapType::Out);
         assert_eq!(lap.telemetry.len(), 0);
     }
 
     #[test]
     fn test_track() {
         let sf_line = geo::Line::new(geo::coord! {x:1.0, y:1.0}, geo::coord! {x:2.0, y:2.0});
-        let track = super::Track::new("Sonoma".to_string(), sf_line);
+        let track = Track::new("Sonoma".to_string(), sf_line);
         assert_eq!(track.name, "Sonoma".to_string());
         assert_eq!(track.start_finish.start, geo::coord! {x:1.0, y:1.0});
         assert_eq!(track.start_finish.end, geo::coord! {x:2.0, y:2.0});
