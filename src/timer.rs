@@ -128,7 +128,7 @@ impl Session {
     }
 
     // Starts the timer on the outlap
-    fn start() -> Lap {
+    fn start(&self) -> Lap {
         Lap::new(LapType::Out)
     }
 
@@ -197,6 +197,9 @@ mod tests {
         let track = Track::new("Sonoma".to_string(), sf_line);
         let session = Session::new(track);
         assert_eq!(session.laps.len(), 0);
+
+        let lap = session.start();
+        assert_eq!(lap.lap_type, LapType::Out);
     }
 
     #[test]
