@@ -192,6 +192,14 @@ mod tests {
     }
 
     #[test]
+    fn test_session() {
+        let sf_line = geo::Line::new(geo::coord! {x:1.0, y:1.0}, geo::coord! {x:2.0, y:2.0});
+        let track = Track::new("Sonoma".to_string(), sf_line);
+        let session = Session::new(track);
+        assert_eq!(session.laps.len(), 0);
+    }
+
+    #[test]
     fn test_track() {
         let sf_line = geo::Line::new(geo::coord! {x:1.0, y:1.0}, geo::coord! {x:2.0, y:2.0});
         let track = Track::new("Sonoma".to_string(), sf_line);
