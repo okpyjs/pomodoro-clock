@@ -193,13 +193,31 @@ mod tests {
 
     #[test]
     fn test_session() {
-        let sf_line = geo::Line::new(geo::coord! {x:1.0, y:1.0}, geo::coord! {x:2.0, y:2.0});
-        let track = Track::new("Sonoma".to_string(), sf_line);
+        let sf_line = geo::Line::new(geo::coord! {x:2.1, y:1.0}, geo::coord! {x:2.6, y:4.0});
+        let track = Track::new("Test Track".to_string(), sf_line);
         let session = Session::new(track);
         assert_eq!(session.laps.len(), 0);
 
-        let lap = session.start();
+        let mut lap = session.start();
         assert_eq!(lap.lap_type, LapType::Out);
+
+        let mut dp_1 = RbMessage::new();
+        dp_1.update_coordinates(1, 1);
+        lap.add_point(dp_1);
+
+        let mut dp_2 = RbMessage::new();
+        dp_2.update_coordinates(2, 2);
+        lap.add_point(dp_2);
+        assert!(!lap.intersects(sf_line));
+
+        let mut dp_3 = RbMessage::new();
+        dp_3.update_coordinates(3, 3);
+        lap.add_point(dp_3);
+        assert!(lap.intersects(sf_line));
+
+        let mut dp_4 = RbMessage::new();
+        dp_4.update_coordinates(4, 4);
+        lap.add_point(dp_4);
     }
 
     #[test]
