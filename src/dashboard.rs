@@ -15,10 +15,30 @@ use super::http;
 
 const LOG_FILE: &str = "/tmp/openlaps_dashboard_testing.db";
 
-struct DashboardApp {
-    _rt: runtime::Runtime,
+struct DashboardModel {
     telemetry: Arc<Mutex<RbMessage>>,
     status: Arc<Mutex<String>>,
+}
+
+impl DashboardModel {
+    fn new() -> Self {
+        DashboardModel {
+            telemetry: Arc::new(Mutex::new(RbMessage::new())),
+            status: Arc::new(Mutex::new(String::new())),
+        }
+    }
+
+    fn clone(&self) -> DashboardModel {
+        DashboardModel {
+            telemetry: self.telemetry.clone(),
+            status: self.status.clone(),
+        }
+    }
+}
+
+struct DashboardApp {
+    _rt: runtime::Runtime,
+    model: DashboardModel,
 }
 
 impl DashboardApp {
@@ -28,32 +48,27 @@ impl DashboardApp {
             .build()
             .unwrap();
 
+        let model = DashboardModel::new();
         // Start the telemetry updater
-        let telemetry = Arc::new(Mutex::new(RbMessage::new()));
-        let telemetry_clone = telemetry.clone();
-        let status = Arc::new(Mutex::new(String::from("Initializing")));
-        let status_clone = status.clone();
+
         let ctx_copy = ctx.egui_ctx.clone();
+        let model_copy = model.clone();
         _rt.spawn(async move {
-            updater(ctx_copy, telemetry_clone, status_clone).await;
+            updater(ctx_copy, model_copy).await;
         });
 
         // Start the HTTP server
         _rt.spawn(async move {
             http::start().await;
         });
-        Self {
-            _rt,
-            telemetry,
-            status,
-        }
+        Self { _rt, model }
     }
 }
 
 impl eframe::App for DashboardApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let t = self.telemetry.lock().unwrap();
-        let status = self.status.lock().unwrap();
+        let t = self.model.telemetry.lock().unwrap();
+        let status = self.model.status.lock().unwrap();
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Openlaps Dashboard");
             ui.label(format!("Status: {}", status));
@@ -64,12 +79,8 @@ impl eframe::App for DashboardApp {
 }
 
 // For lack of a better name, this is the core logic
-async fn updater(
-    ctx: eframe::egui::Context,
-    telemetry: Arc<Mutex<RbMessage>>,
-    status: Arc<Mutex<String>>,
-) {
-    *status.lock().unwrap() = String::from("Creating RB Manager");
+async fn updater(ctx: eframe::egui::Context, model: DashboardModel) {
+    *model.status.lock().unwrap() = String::from("Creating RB Manager");
     ctx.request_repaint();
     let mut rb = match RbManager::new().await {
         Err(e) => {
@@ -78,13 +89,13 @@ async fn updater(
         Ok(rb) => rb,
     };
 
-    *status.lock().unwrap() = String::from("Connecting to RB");
+    *model.status.lock().unwrap() = String::from("Connecting to RB");
     ctx.request_repaint();
-    let status_clone = status.clone();
+    //let model_clone = model.clone();
     let ctx_clone = ctx.clone();
     let rc = match rb.connect().await {
         Err(e) => {
-            *status_clone.lock().unwrap() = e;
+            *model.status.lock().unwrap() = e;
             ctx_clone.request_repaint();
             panic!("Failed to connect to RB");
         }
@@ -96,20 +107,20 @@ async fn updater(
 
     let (tx, mut rx) = mpsc::channel(32);
 
-    *status.lock().unwrap() = String::from("Starting RB stream");
+    *model.status.lock().unwrap() = String::from("Starting RB stream");
     ctx.request_repaint();
     // Start another thread to stream from the racebox mini
-    let status_clone = status.clone();
+    let model_clone = model.clone();
     let ctx_clone = ctx.clone();
     tokio::spawn(async move {
         if let Err(err) = rc.stream(tx).await {
-            *status_clone.lock().unwrap() = format!("{}", err);
+            *model_clone.status.lock().unwrap() = format!("{}", err);
             ctx_clone.request_repaint();
             panic!("{}", err)
         }
     });
 
-    *status.lock().unwrap() = String::from("Running");
+    *model.status.lock().unwrap() = String::from("Running");
     ctx.request_repaint();
     // Our receive loop, get a message from the racebox, send it to our app
     while let Some(msg) = rx.recv().await {
@@ -119,7 +130,7 @@ async fn updater(
             continue; // do nothing for now
         }
 
-        *telemetry.lock().unwrap() = rb_msg;
+        *model.telemetry.lock().unwrap() = rb_msg;
         ctx.request_repaint();
     }
     // XXX we don't have a decent way to shut down!
