@@ -141,6 +141,7 @@ pub fn start() {
         resizable: false,
         decorated: false,
         initial_window_pos: Some(egui::pos2(0.0,0.0)),
+        always_on_top: true,
         ..Default::default()
     };
     eframe::run_native(
