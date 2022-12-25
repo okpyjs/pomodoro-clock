@@ -57,6 +57,10 @@ impl DashboardApp {
 
         let model = DashboardModel::new();
 
+        let mut visuals = ctx.egui_ctx.style().visuals.clone();
+        visuals.override_text_color = Some(egui::Color32::WHITE);
+        ctx.egui_ctx.set_visuals(visuals);
+
         // Start the telemetry updater
         let ctx_clone = ctx.egui_ctx.clone();
         let model_clone = model.clone();
@@ -144,6 +148,7 @@ pub fn start() {
         always_on_top: true,
         ..Default::default()
     };
+
     eframe::run_native(
         "Openlaps Dashboard",
         options,
