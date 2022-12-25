@@ -6,15 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-gtk = { version = "0.5.4", package = "gtk4", features = ["v4_6"] }
 tokio = "1.23.0"
-relm4 = "0.5.0-beta.5"
-relm4-components = "0.5.0-beta.5"
 rbmini = { git = "https://github.com/transitorykris/rbmini" }
 logger = { git = "https://github.com/transitorykris/logger" }
 hyper = { version = "0.14", features = ["full"] }
 geo = "0.23.1"
-egui = "0.20.0"
 eframe = { version = "0.20.0", default-features = false, features = [
     "default_fonts", # Embed the default egui fonts.
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
