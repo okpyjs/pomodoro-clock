@@ -139,6 +139,8 @@ pub fn start() {
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::vec2(800.0, 600.0)),
         resizable: false,
+        decorated: false,
+        initial_window_pos: Some(egui::pos2(0.0,0.0)),
         ..Default::default()
     };
     eframe::run_native(
