@@ -82,10 +82,13 @@ impl eframe::App for DashboardApp {
         let status = self.model.status.lock().unwrap();
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Openlaps Dashboard");
-            ui.label(format!("{} kph", t.speed()));
-            ui.label(format!("Status: {}", status));
+            
+            ui.label(egui::RichText::new(format!("{:.1} kph", t.speed())).size(128.0));
+            ui.label(egui::RichText::new("1:53.06").size(200.0));
+
             ui.label(format!("GPS Coordinates: {}", t.gps_coordinates()));
             ui.label(format!("GPS Fix: {}", t.is_valid_fix()));
+            ui.label(format!("{}", status));
         });
     }
 }
