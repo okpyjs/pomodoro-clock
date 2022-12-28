@@ -592,6 +592,7 @@ dependencies = [
  "hyper",
  "logger",
  "rbmini",
+ "timer",
  "tokio",
  "tracing-subscriber",
  "tracing-wasm",
@@ -2285,6 +2286,14 @@ dependencies = [
  "libc",
  "wasi 0.10.0+wasi-snapshot-preview1",
  "winapi",
+]
+
+[[package]]
+name = "timer"
+version = "0.1.0"
+source = "git+https://github.com/transitorykris/timer#a1ba84dc46bb8f62cad8055de57090d816f34050"
+dependencies = [
+ "geo",
 ]
 
 [[package]]
