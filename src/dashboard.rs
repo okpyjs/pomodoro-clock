@@ -82,7 +82,7 @@ impl eframe::App for DashboardApp {
         let status = self.model.status.lock().unwrap();
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Openlaps Dashboard");
-            
+
             ui.label(egui::RichText::new(format!("{:.1} kph", t.speed())).size(128.0));
             ui.label(egui::RichText::new("1:53.06").size(200.0));
 
@@ -145,11 +145,12 @@ pub fn start() {
     tracing_subscriber::fmt::init();
 
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(800.0, 600.0)),
+        initial_window_size: Some(egui::vec2(800.0, 480.0)),
         resizable: false,
         decorated: false,
-        initial_window_pos: Some(egui::pos2(0.0,0.0)),
+        initial_window_pos: Some(egui::pos2(0.0, 0.0)),
         always_on_top: true,
+        fullscreen: true,
         ..Default::default()
     };
 
