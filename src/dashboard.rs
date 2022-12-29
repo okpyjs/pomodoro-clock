@@ -25,13 +25,16 @@ macro_rules! send {
 struct DashboardModel {
     telemetry: Arc<Mutex<RbMessage>>,
     status: Arc<Mutex<String>>,
+    session: Arc<Mutex<timer::Session>>,
 }
 
 impl DashboardModel {
     fn new() -> Self {
+        let track = timer::Track::new("Default Track".to_string(), (1.0, 1.0), (2.0, 2.0));
         DashboardModel {
             telemetry: Arc::new(Mutex::new(RbMessage::new())),
             status: Arc::new(Mutex::new(String::new())),
+            session: Arc::new(Mutex::new(timer::Session::new(track))),
         }
     }
 
@@ -39,6 +42,7 @@ impl DashboardModel {
         DashboardModel {
             telemetry: self.telemetry.clone(),
             status: self.status.clone(),
+            session: self.session.clone(),
         }
     }
 }
