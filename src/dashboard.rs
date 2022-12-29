@@ -10,6 +10,7 @@ use tokio::sync::mpsc;
 use logger::Logger;
 use rbmini::connection::RbManager;
 use rbmini::message::{decode_rb_message, RbMessage};
+use timer::{Lap, LapType, Session};
 
 use super::http;
 
@@ -25,7 +26,8 @@ macro_rules! send {
 struct DashboardModel {
     telemetry: Arc<Mutex<RbMessage>>,
     status: Arc<Mutex<String>>,
-    session: Arc<Mutex<timer::Session>>,
+    session: Arc<Mutex<Session>>,
+    lap: Arc<Mutex<Lap>>, // The current lap
 }
 
 impl DashboardModel {
@@ -35,6 +37,7 @@ impl DashboardModel {
             telemetry: Arc::new(Mutex::new(RbMessage::new())),
             status: Arc::new(Mutex::new(String::new())),
             session: Arc::new(Mutex::new(timer::Session::new(track))),
+            lap: Arc::new(Mutex::new(timer::Lap::new(LapType::Out))),
         }
     }
 
@@ -43,6 +46,7 @@ impl DashboardModel {
             telemetry: self.telemetry.clone(),
             status: self.status.clone(),
             session: self.session.clone(),
+            lap: self.lap.clone(),
         }
     }
 }
@@ -84,11 +88,20 @@ impl eframe::App for DashboardApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let t = self.model.telemetry.lock().unwrap();
         let status = self.model.status.lock().unwrap();
+        let session = self.model.session.lock().unwrap();
+        let lap = self.model.lap.lock().unwrap();
+
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Openlaps Dashboard");
 
-            ui.label(egui::RichText::new(format!("{:.1} kph", t.speed())).size(128.0));
-            ui.label(egui::RichText::new("1:53.06").size(200.0));
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(format!("{:.1} kph", t.speed())).size(96.0));
+                ui.label(
+                    egui::RichText::new(format!("Lap {}", session.current_lap_number())).size(96.0),
+                );
+            });
+
+            ui.label(egui::RichText::new(format!("{:.1?}", lap.time())).size(200.0));
 
             ui.label(format!("GPS Coordinates: {}", t.gps_coordinates()));
             ui.label(format!("GPS Fix: {}", t.is_valid_fix()));

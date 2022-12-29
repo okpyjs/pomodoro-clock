@@ -2403,7 +2403,7 @@ dependencies = [
 [[package]]
 name = "timer"
 version = "0.1.0"
-source = "git+https://github.com/transitorykris/timer#cea35de0ab8d099c9b3a488c5bb397d737384b54"
+source = "git+https://github.com/transitorykris/timer#a2f69e05eb70e53121a3846062dc876d861b2e3b"
 dependencies = [
  "geo",
 ]
