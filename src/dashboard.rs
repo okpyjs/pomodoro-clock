@@ -148,6 +148,10 @@ pub fn start() {
     // Log to stdout (if you run with `RUST_LOG=debug`).
     tracing_subscriber::fmt::init();
 
+    // Use downlevel_defaults() to run on the Raspberry Pi 4
+    let mut wgpu_options = eframe::egui_wgpu::WgpuConfiguration::default();
+    wgpu_options.device_descriptor.limits = wgpu::Limits::downlevel_defaults();
+
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::vec2(800.0, 480.0)),
         resizable: false,
@@ -155,6 +159,7 @@ pub fn start() {
         initial_window_pos: Some(egui::pos2(0.0, 0.0)),
         always_on_top: true,
         fullscreen: true,
+        wgpu_options,
         ..Default::default()
     };
 
