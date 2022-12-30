@@ -25,6 +25,8 @@ macro_rules! send {
     };
 }
 
+// TODO rework the model to be a single lock?
+// If we don't perform the locking in the correct order we can easily deadlock
 struct DashboardModel {
     telemetry: Arc<Mutex<RbMessage>>,
     status: Arc<Mutex<String>>,
@@ -45,10 +47,10 @@ impl DashboardModel {
 
     fn clone(&self) -> DashboardModel {
         DashboardModel {
-            telemetry: self.telemetry.clone(),
-            status: self.status.clone(),
-            session: self.session.clone(),
-            lap: self.lap.clone(),
+            telemetry: Arc::clone(&self.telemetry),
+            status: Arc::clone(&self.status),
+            session: Arc::clone(&self.session),
+            lap: Arc::clone(&self.lap),
         }
     }
 }
@@ -97,10 +99,10 @@ impl DashboardApp {
 
 impl eframe::App for DashboardApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        let lap = self.model.lap.lock().unwrap();
         let t = self.model.telemetry.lock().unwrap();
         let status = self.model.status.lock().unwrap();
         let session = self.model.session.lock().unwrap();
-        let lap = self.model.lap.lock().unwrap();
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Openlaps Dashboard");
@@ -158,11 +160,24 @@ async fn updater(ctx: eframe::egui::Context, model: DashboardModel) {
 
     send!(ctx, model, status, String::from("Running"));
     // Our receive loop, get a message from the racebox, send it to our app
+    let session_mutex = Arc::clone(&model.session);
+    let lap_mutex = Arc::clone(&model.lap.clone());
     while let Some(msg) = rx.recv().await {
         let rb_msg = decode_rb_message(&msg.value);
 
         if logger.write(&rb_msg.to_json()).is_err() {
             continue; // do nothing for now
+        }
+
+        // XXX below is untested
+
+        let mut lap = lap_mutex.lock().unwrap();
+        let coords = rb_msg.gps_coordinates();
+        lap.add_point(coords.latitude(), coords.longitude());
+
+        let mut session = session_mutex.lock().unwrap();
+        if session.is_lap_complete(&lap.copy()) {
+            *lap = session.add_lap(lap.copy()); // Save the lap and get the next lap
         }
 
         send!(ctx, model, telemetry, rb_msg);
