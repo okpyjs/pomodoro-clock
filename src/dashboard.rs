@@ -106,14 +106,15 @@ impl eframe::App for DashboardApp {
             ui.heading("Openlaps Dashboard");
 
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(format!("{:.1} kph", t.speed())).size(96.0));
-                ui.add_space(75.0);
+                ui.label(egui::RichText::new(format!("{:03} kph", t.speed() as u8)).size(96.0));
+                ui.add_space(100.0);
                 ui.label(
-                    egui::RichText::new(format!("Lap {}", session.current_lap_number())).size(96.0),
+                    egui::RichText::new(format!("Lap {:02}", session.current_lap_number()))
+                        .size(96.0),
                 );
             });
 
-            ui.label(egui::RichText::new(pretty_duration(lap.time())).size(200.0));
+            ui.label(egui::RichText::new(pretty_duration(lap.time())).size(224.0));
 
             ui.label(format!("GPS Coordinates: {}", t.gps_coordinates()));
             ui.label(format!("GPS Fix: {}", t.is_valid_fix()));
