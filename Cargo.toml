@@ -7,9 +7,9 @@ edition = "2021"
 
 [dependencies]
 tokio = "1.23.0"
-rbmini = { git = "https://github.com/transitorykris/rbmini" }
-logger = { git = "https://github.com/transitorykris/logger" }
-timer = { git = "https://github.com/transitorykris/timer" }
+rbmini = { path = "../rbmini" }
+logger = { path = "../logger" }
+timer = { path = "../timer" }
 hyper = { version = "0.14", features = ["full"] }
 geo = "0.23.1"
 eframe = { version = "0.20.0", default-features = false, features = [

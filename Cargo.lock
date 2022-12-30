@@ -1076,9 +1076,9 @@ dependencies = [
 
 [[package]]
 name = "geographiclib-rs"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fdbd3cdc1856ca7736763d2784671c2c9b0093f0ee47e2bed0059feed6afca89"
+checksum = "04a4efc8e99f43d1d29331a073981bb13074b253edc08ffc8ccf5f384b1d1d1e"
 dependencies = [
  "lazy_static",
 ]
@@ -1530,7 +1530,6 @@ dependencies = [
 [[package]]
 name = "logger"
 version = "0.1.0"
-source = "git+https://github.com/transitorykris/logger#fd0d2acfb9c517e4fd473d3a2d4ec830ad150c1f"
 dependencies = [
  "rusqlite",
 ]
@@ -1992,7 +1991,6 @@ dependencies = [
 [[package]]
 name = "rbmini"
 version = "0.1.0"
-source = "git+https://github.com/transitorykris/rbmini#7c93b853a4303e0f5c19e9e1b9b530974270f02f"
 dependencies = [
  "bincode",
  "btleplug",
@@ -2403,7 +2401,6 @@ dependencies = [
 [[package]]
 name = "timer"
 version = "0.1.0"
-source = "git+https://github.com/transitorykris/timer#53c88ffc467b6cc02e515bd0fc1f17a09b98fe1e"
 dependencies = [
  "geo",
 ]
