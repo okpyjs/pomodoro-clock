@@ -107,6 +107,7 @@ impl eframe::App for DashboardApp {
 
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new(format!("{:.1} kph", t.speed())).size(96.0));
+                ui.add_space(75.0);
                 ui.label(
                     egui::RichText::new(format!("Lap {}", session.current_lap_number())).size(96.0),
                 );
