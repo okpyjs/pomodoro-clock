@@ -32,6 +32,7 @@ struct DashboardModel {
     status: Arc<Mutex<String>>,
     session: Arc<Mutex<Session>>,
     lap: Arc<Mutex<Lap>>, // The current lap
+    session_id: u64,
 }
 
 impl DashboardModel {
@@ -42,6 +43,10 @@ impl DashboardModel {
             status: Arc::new(Mutex::new(String::new())),
             session: Arc::new(Mutex::new(timer::Session::new(track))),
             lap: Arc::new(Mutex::new(timer::Lap::new(LapType::Out))),
+            session_id: time::SystemTime::now()
+                .duration_since(time::UNIX_EPOCH)
+                .expect("bad times")
+                .as_secs(),
         }
     }
 
@@ -51,6 +56,7 @@ impl DashboardModel {
             status: Arc::clone(&self.status),
             session: Arc::clone(&self.session),
             lap: Arc::clone(&self.lap),
+            session_id: self.session_id,
         }
     }
 }
@@ -165,7 +171,7 @@ async fn updater(ctx: eframe::egui::Context, model: DashboardModel) {
     while let Some(msg) = rx.recv().await {
         let rb_msg = decode_rb_message(&msg.value);
 
-        if logger.write(&rb_msg.to_json()).is_err() {
+        if logger.write(model.session_id, &rb_msg.to_json()).is_err() {
             continue; // do nothing for now
         }
 
