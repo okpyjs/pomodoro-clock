@@ -1531,6 +1531,7 @@ dependencies = [
 name = "logger"
 version = "0.1.0"
 dependencies = [
+ "rbmini",
  "rusqlite",
 ]
 
