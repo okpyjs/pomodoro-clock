@@ -156,10 +156,10 @@ async fn updater(ctx: eframe::egui::Context, model: DashboardModel) {
     // Start another thread to stream from the racebox mini
     let (tx, mut rx) = mpsc::channel(32);
     let model_clone = model.clone();
-    let ctx_clone = ctx.clone();
+    let _ctx_clone = ctx.clone();
     tokio::spawn(async move {
         if let Err(err) = rc.stream(tx).await {
-            send!(ctx_clone, model_clone, status, format!("{}", err));
+            send!(_ctx_clone, model_clone, status, format!("{}", err));
             panic!("{}", err)
         }
     });
