@@ -171,6 +171,11 @@ async fn updater(ctx: eframe::egui::Context, model: DashboardModel) {
     while let Some(msg) = rx.recv().await {
         let rb_msg = decode_rb_message(&msg.value);
 
+        // TODO check to see if:
+        // 1. Check to see if we're already logging, if so, keeping going
+        // 2. Otherwise, check to see if we're going faster than 5mph, start logging
+        // 3. Finally, check to see if we've stopped for more than 2 minutes, stop logging
+
         if logger.write(model.session_id, &rb_msg.to_json()).is_err() {
             continue; // do nothing for now
         }
