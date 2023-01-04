@@ -32,6 +32,7 @@ struct DashboardModel {
     status: Arc<Mutex<String>>,
     session: Arc<Mutex<Session>>,
     lap: Arc<Mutex<Lap>>, // The current lap
+    session_id: u64,
 }
 
 impl DashboardModel {
@@ -42,6 +43,10 @@ impl DashboardModel {
             status: Arc::new(Mutex::new(String::new())),
             session: Arc::new(Mutex::new(timer::Session::new(track))),
             lap: Arc::new(Mutex::new(timer::Lap::new(LapType::Out))),
+            session_id: time::SystemTime::now()
+                .duration_since(time::UNIX_EPOCH)
+                .expect("bad times")
+                .as_secs(),
         }
     }
 
@@ -51,6 +56,7 @@ impl DashboardModel {
             status: Arc::clone(&self.status),
             session: Arc::clone(&self.session),
             lap: Arc::clone(&self.lap),
+            session_id: self.session_id,
         }
     }
 }
@@ -150,10 +156,10 @@ async fn updater(ctx: eframe::egui::Context, model: DashboardModel) {
     // Start another thread to stream from the racebox mini
     let (tx, mut rx) = mpsc::channel(32);
     let model_clone = model.clone();
-    let ctx_clone = ctx.clone();
+    let _ctx_clone = ctx.clone();
     tokio::spawn(async move {
         if let Err(err) = rc.stream(tx).await {
-            send!(ctx_clone, model_clone, status, format!("{}", err));
+            send!(_ctx_clone, model_clone, status, format!("{}", err));
             panic!("{}", err)
         }
     });
@@ -165,7 +171,12 @@ async fn updater(ctx: eframe::egui::Context, model: DashboardModel) {
     while let Some(msg) = rx.recv().await {
         let rb_msg = decode_rb_message(&msg.value);
 
-        if logger.write(&rb_msg.to_json()).is_err() {
+        // TODO check to see if:
+        // 1. Check to see if we're already logging, if so, keeping going
+        // 2. Otherwise, check to see if we're going faster than 5mph, start logging
+        // 3. Finally, check to see if we've stopped for more than 2 minutes, stop logging
+
+        if logger.write(model.session_id, &rb_msg.to_json()).is_err() {
             continue; // do nothing for now
         }
 
