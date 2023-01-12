@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 use eframe::{egui, CreationContext};
+use local_ip_address::local_ip;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -126,7 +127,13 @@ impl eframe::App for DashboardApp {
 
             ui.label(format!("GPS Coordinates: {}", t.gps_coordinates()));
             ui.label(format!("GPS Fix: {}", t.is_valid_fix()));
-            ui.label(format!("{}", status));
+            ui.horizontal(|ui| {
+                match local_ip() {
+                    Err(_) => ui.label("IP not available"),
+                    Ok(ip) => ui.label(format!("{:?}", ip)),
+                };
+                ui.label(format!("{}", status));
+            });
         });
     }
 }
