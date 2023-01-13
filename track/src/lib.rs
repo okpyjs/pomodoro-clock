@@ -58,13 +58,17 @@ impl Tracks {
         sf_end_lat: f64,
         sf_end_long: f64,
     ) -> Result<Track, Box<dyn Error>> {
-        Ok(Track::new(
-            name,
-            sf_start_lat,
-            sf_start_long,
-            sf_end_lat,
-            sf_end_long,
-        ))
+        let track = Track::new(name, sf_start_lat, sf_start_long, sf_end_lat, sf_end_long);
+
+        // TODO handle errors!
+        let mut stmt = self
+            .conn
+            .prepare("INSERT INTO tracks (value) VALUES (:value)")
+            .unwrap();
+        stmt.execute(named_params! { ":value": track.to_json()})
+            .unwrap();
+
+        Ok(track)
     }
 
     // Finds the track with the start/finish line closest to the coordinate
@@ -103,6 +107,10 @@ impl Track {
             sf_end_lat,
             sf_end_long,
         }
+    }
+
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(self).unwrap()
     }
 }
 
