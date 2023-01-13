@@ -4,6 +4,7 @@ members = [
     "logger",
     "rbmini",
     "timer",
+    "track",
 ]
 default-members = ["dashboard"]
 resolver = "2"
