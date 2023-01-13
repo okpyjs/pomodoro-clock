@@ -1,37 +1,9 @@
-[package]
-name = "dashboard"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-tokio = "1.23.0"
-rbmini = { path = "../rbmini" }
-logger = { path = "../logger" }
-timer = { path = "../timer" }
-hyper = { version = "0.14", features = ["full"] }
-geo = "0.23.1"
-eframe = { version = "0.20.1", default-features = false, features = [
-    "default_fonts", # Embed the default egui fonts.
-    "wgpu",          # Use the glow rendering backend. Alternative: "wgpu".
-] }
-wgpu = "0.14.2"
-local-ip-address = "0.5.1"
-
-# native:
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tracing-subscriber = "0.3"
-
-# web:
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-console_error_panic_hook = "0.1.6"
-tracing-wasm = "0.2"
-wasm-bindgen-futures = "0.4"
-
-[profile.release]
-opt-level = 2 # fast and small wasm
-
-# Optimize all dependencies even in debug builds:
-[profile.dev.package."*"]
-opt-level = 2
+[workspace]
+members = [
+    "dashboard",
+    "logger",
+    "rbmini",
+    "timer",
+]
+default-members = ["dashboard"]
+resolver = "2"
