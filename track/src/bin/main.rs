@@ -1,3 +1,11 @@
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {}
+
 fn main() {
-    println!("Future track DB CLI tool");
+    let args = Args::parse();
+
+    println!("Tracks CLI tool");
 }
