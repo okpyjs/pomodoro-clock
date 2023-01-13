@@ -28,9 +28,7 @@ impl Tracks {
             panic!("Failed to create table: {}", e)
         };
 
-        let mut stmt = conn
-            .prepare("SELECT value FROM telemetry WHERE session_id=?")
-            .unwrap();
+        let mut stmt = conn.prepare("SELECT value FROM tracks").unwrap();
         let values = stmt.query_map([], |row| Ok(row.get(0)?)).unwrap();
         let mut tracks: Vec<Track> = Vec::new();
         for value in values {
@@ -120,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_tracks() {
-        let filename = Path::new(&"tracks.db".to_string());
+        let filename = Path::new("tracks.db");
         let tracks = Tracks::new(filename);
         tracks.add("A test track".to_string(), 1.0, 1.0, 2.0, 2.0);
         tracks.find_nearest(0.0, 0.0);
