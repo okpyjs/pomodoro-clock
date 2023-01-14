@@ -120,12 +120,24 @@ mod tests {
     fn test_tracks() {
         let filename = Path::new("tracks.db");
         let tracks = Tracks::new(filename);
-        tracks.add("A test track".to_string(), 1.0, 1.0, 2.0, 2.0);
+        let t = tracks
+            .add("A test track".to_string(), 1.0, 1.0, 2.0, 2.0)
+            .unwrap();
+        assert_eq!(t.name, "A test track");
+        assert_eq!(t.sf_start_lat, 1.0);
+        assert_eq!(t.sf_start_long, 1.0);
+        assert_eq!(t.sf_end_lat, 2.0);
+        assert_eq!(t.sf_end_long, 2.0);
         tracks.find_nearest(0.0, 0.0);
     }
 
     #[test]
     fn test_track() {
-        let track = Track::new("A test track".to_string(), 1.0, 1.0, 2.0, 2.0);
+        let t = Track::new("A test track".to_string(), 1.0, 1.0, 2.0, 2.0);
+        assert_eq!(t.name, "A test track");
+        assert_eq!(t.sf_start_lat, 1.0);
+        assert_eq!(t.sf_start_long, 1.0);
+        assert_eq!(t.sf_end_lat, 2.0);
+        assert_eq!(t.sf_end_long, 2.0);
     }
 }
