@@ -3,6 +3,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use serde_json;
 use std::error::Error;
+use std::fs::remove_file;
 use std::path::Path;
 
 struct Tracks {
@@ -49,7 +50,7 @@ impl Tracks {
     }
 
     fn add(
-        &self,
+        &mut self,
         name: String,
         sf_start_lat: f64,
         sf_start_long: f64,
@@ -66,22 +67,29 @@ impl Tracks {
         stmt.execute(named_params! { ":value": track.to_json()})
             .unwrap();
 
+        self.tracks.push(track.clone());
+
         Ok(track)
     }
 
     // Finds the track with the start/finish line closest to the coordinate
-    fn find_nearest(&self, lat: f64, long: f64) -> Track {
-        Track {
-            name: "".to_string(),
-            sf_start_lat: 0.0,
-            sf_start_long: 0.0,
-            sf_end_lat: 0.0,
-            sf_end_long: 0.0,
+    // We're using option because the DB may be empty
+    fn find_nearest(&self, lat: f64, long: f64) -> Option<Track> {
+        let mut nearest: Option<Track> = None;
+        let mut distance = f64::MAX;
+        for track in self.tracks.iter() {
+            let d = ((lat - track.sf_start_lat).powf(2.0) + (long - track.sf_start_long).powf(2.0))
+                .sqrt();
+            if nearest.is_none() || d < distance {
+                nearest = Some(track.clone());
+                distance = d;
+            }
         }
+        nearest
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 struct Track {
     name: String,
     sf_start_lat: f64, // Start of the start/finish line
@@ -118,8 +126,11 @@ mod tests {
 
     #[test]
     fn test_tracks() {
-        let filename = Path::new("tracks.db");
-        let tracks = Tracks::new(filename);
+        // Clean up any previous tests
+        remove_file("tracks_rust_test.db");
+
+        let filename = Path::new("tracks_rust_test.db");
+        let mut tracks = Tracks::new(filename);
         let t = tracks
             .add("A test track".to_string(), 1.0, 1.0, 2.0, 2.0)
             .unwrap();
@@ -128,7 +139,23 @@ mod tests {
         assert_eq!(t.sf_start_long, 1.0);
         assert_eq!(t.sf_end_lat, 2.0);
         assert_eq!(t.sf_end_long, 2.0);
-        tracks.find_nearest(0.0, 0.0);
+
+        let _ = tracks
+            .add("One Magnitude".to_string(), 10.0, 10.0, 10.1, 10.1)
+            .unwrap();
+        let _ = tracks
+            .add("Distant Track".to_string(), 100.0, 100.0, 100.1, 100.1)
+            .unwrap();
+        let t = tracks.find_nearest(8.0, 8.0).unwrap();
+        assert_eq!(t.name, "One Magnitude");
+        let _ = tracks
+            .add("Just a bit closer".to_string(), 9.0, 9.0, 9.1, 9.1)
+            .unwrap();
+        let t = tracks.find_nearest(8.0, 8.0).unwrap();
+        assert_eq!(t.name, "Just a bit closer");
+
+        // Clean up this test
+        remove_file("tracks_rust_test.db");
     }
 
     #[test]
