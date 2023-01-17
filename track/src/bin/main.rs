@@ -16,6 +16,9 @@ use std::path::Path;
 struct Args {
     #[clap(value_parser)]
     name: Option<String>,
+
+    #[clap(short, long, default_value_t = String::from("tracks.db"))]
+    output: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -52,8 +55,8 @@ fn load_feature_collection(filename: &Path) -> FeatureCollection {
     FeatureCollection::try_from(geojson).unwrap()
 }
 
-fn get_db() -> Connection {
-    match Connection::open("tracks.db") {
+fn get_db(filename: &Path) -> Connection {
+    match Connection::open(filename) {
         Err(e) => panic!("Failed to open database: {}", e),
         Ok(c) => {
             if let Err(e) = c.execute(
@@ -85,7 +88,8 @@ fn main() {
     let geojson_file = Path::new(&filename);
     let feature_collection = load_feature_collection(geojson_file);
 
-    let conn = get_db();
+    let filename = Path::new(&args.output);
+    let conn = get_db(filename);
 
     for f in feature_collection.into_iter() {
         let sf = feature_to_sfline(f);
