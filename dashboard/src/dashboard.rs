@@ -17,7 +17,7 @@ use timer::{Lap, LapType, Session};
 
 use super::http;
 
-const LOG_FILE: &str = "/tmp/openlaps_dashboard_testing.db";
+const LOG_FILE: &str = "openlaps_logger.db";
 const FRAME_RATE: u64 = 20; // Desired minimum FPS
 
 macro_rules! send {
