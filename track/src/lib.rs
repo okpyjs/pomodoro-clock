@@ -52,12 +52,10 @@ impl Tracks {
     fn add(
         &mut self,
         name: String,
-        sf_start_lat: f64,
-        sf_start_long: f64,
-        sf_end_lat: f64,
-        sf_end_long: f64,
+        sf_start: (f64, f64),
+        sf_end: (f64, f64),
     ) -> Result<Track, Box<dyn Error>> {
-        let track = Track::new(name, sf_start_lat, sf_start_long, sf_end_lat, sf_end_long);
+        let track = Track::new(name, sf_start, sf_end);
 
         // TODO handle errors!
         let mut stmt = self
@@ -78,8 +76,8 @@ impl Tracks {
         let mut nearest: Option<Track> = None;
         let mut distance = f64::MAX;
         for track in self.tracks.iter() {
-            let d = ((lat - track.sf_start_lat).powf(2.0) + (long - track.sf_start_long).powf(2.0))
-                .sqrt();
+            let d =
+                ((lat - track.sf_start.0).powf(2.0) + (long - track.sf_start.1).powf(2.0)).sqrt();
             if nearest.is_none() || d < distance {
                 nearest = Some(track.clone());
                 distance = d;
@@ -90,28 +88,18 @@ impl Tracks {
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-struct Track {
-    name: String,
-    sf_start_lat: f64, // Start of the start/finish line
-    sf_start_long: f64,
-    sf_end_lat: f64, // End of the start/finish line
-    sf_end_long: f64,
+pub struct Track {
+    pub name: String,
+    pub sf_start: (f64, f64), // Start of the start/finish line
+    pub sf_end: (f64, f64),   // End of the start/finish line
 }
 
 impl Track {
-    fn new(
-        name: String,
-        sf_start_lat: f64,
-        sf_start_long: f64,
-        sf_end_lat: f64,
-        sf_end_long: f64,
-    ) -> Self {
+    fn new(name: String, sf_start: (f64, f64), sf_end: (f64, f64)) -> Self {
         Track {
             name,
-            sf_start_lat,
-            sf_start_long,
-            sf_end_lat,
-            sf_end_long,
+            sf_start,
+            sf_end,
         }
     }
 
@@ -132,24 +120,22 @@ mod tests {
         let filename = Path::new("tracks_rust_test.db");
         let mut tracks = Tracks::new(filename);
         let t = tracks
-            .add("A test track".to_string(), 1.0, 1.0, 2.0, 2.0)
+            .add("A test track".to_string(), (1.0, 1.0), (2.0, 2.0))
             .unwrap();
         assert_eq!(t.name, "A test track");
-        assert_eq!(t.sf_start_lat, 1.0);
-        assert_eq!(t.sf_start_long, 1.0);
-        assert_eq!(t.sf_end_lat, 2.0);
-        assert_eq!(t.sf_end_long, 2.0);
+        assert_eq!(t.sf_start, (1.0, 1.0));
+        assert_eq!(t.sf_end, (2.0, 2.0));
 
         let _ = tracks
-            .add("One Magnitude".to_string(), 10.0, 10.0, 10.1, 10.1)
+            .add("One Magnitude".to_string(), (10.0, 10.0), (10.1, 10.1))
             .unwrap();
         let _ = tracks
-            .add("Distant Track".to_string(), 100.0, 100.0, 100.1, 100.1)
+            .add("Distant Track".to_string(), (100.0, 100.0), (100.1, 100.1))
             .unwrap();
         let t = tracks.find_nearest(8.0, 8.0).unwrap();
         assert_eq!(t.name, "One Magnitude");
         let _ = tracks
-            .add("Just a bit closer".to_string(), 9.0, 9.0, 9.1, 9.1)
+            .add("Just a bit closer".to_string(), (9.0, 9.0), (9.1, 9.1))
             .unwrap();
         let t = tracks.find_nearest(8.0, 8.0).unwrap();
         assert_eq!(t.name, "Just a bit closer");
@@ -160,11 +146,9 @@ mod tests {
 
     #[test]
     fn test_track() {
-        let t = Track::new("A test track".to_string(), 1.0, 1.0, 2.0, 2.0);
+        let t = Track::new("A test track".to_string(), (1.0, 1.0), (2.0, 2.0));
         assert_eq!(t.name, "A test track");
-        assert_eq!(t.sf_start_lat, 1.0);
-        assert_eq!(t.sf_start_long, 1.0);
-        assert_eq!(t.sf_end_lat, 2.0);
-        assert_eq!(t.sf_end_long, 2.0);
+        assert_eq!(t.sf_start, (1.0, 1.0));
+        assert_eq!(t.sf_end, (2.0, 2.0));
     }
 }

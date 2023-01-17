@@ -1,13 +1,13 @@
 use clap::Parser;
 use geojson::{Feature, FeatureCollection, GeoJson, Value};
-use rusqlite::{named_params, Connection, Result};
-use serde::Deserialize;
-use serde::Serialize;
-use serde_json;
+use rusqlite::{named_params, Connection};
+use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
+
+use track::Track;
 
 // XXX This is all very quick and dirty and explody!
 
@@ -21,14 +21,7 @@ struct Args {
     output: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
-struct SFLine {
-    name: String,
-    sf_start: (f64, f64),
-    sf_end: (f64, f64),
-}
-
-fn feature_to_sfline(f: Feature) -> SFLine {
+fn feature_to_sfline(f: Feature) -> Track {
     let p = f.properties.unwrap();
     let track = p.get("name").unwrap();
     let g = f.geometry.unwrap();
@@ -39,7 +32,7 @@ fn feature_to_sfline(f: Feature) -> SFLine {
             x
         }
     };
-    SFLine {
+    Track {
         name: track.to_string(),
         sf_start: (ls[0][0], ls[0][1]),
         sf_end: (ls[1][0], ls[1][1]),
@@ -73,7 +66,7 @@ fn get_db(filename: &Path) -> Connection {
     }
 }
 
-fn add_track(conn: &Connection, data: SFLine) {
+fn add_track(conn: &Connection, data: Track) {
     let mut stmt = conn
         .prepare("INSERT INTO tracks (value) VALUES (:value)")
         .unwrap();
