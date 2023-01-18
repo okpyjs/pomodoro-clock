@@ -1,9 +1,7 @@
 use rusqlite::{named_params, Connection, Result};
 use serde::Deserialize;
 use serde::Serialize;
-use serde_json;
 use std::error::Error;
-use std::fs::remove_file;
 use std::path::Path;
 
 struct Tracks {
@@ -111,6 +109,7 @@ impl Track {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs::remove_file;
 
     #[test]
     fn test_tracks() {

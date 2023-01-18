@@ -1,7 +1,6 @@
 use clap::Parser;
 use geojson::{Feature, FeatureCollection, GeoJson, Value};
 use rusqlite::{named_params, Connection};
-use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::fs::File;
 use std::io::prelude::*;

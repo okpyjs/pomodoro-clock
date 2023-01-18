@@ -1,5 +1,4 @@
 use rusqlite::{named_params, Connection, Result};
-use serde_json;
 use std::path::Path;
 
 use rbmini::message::RbMessage;
