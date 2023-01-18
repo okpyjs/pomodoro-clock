@@ -14,7 +14,7 @@ use track::Track;
 #[command(author, version, about, long_about = None)]
 struct Args {
     #[clap(value_parser)]
-    name: Option<String>,
+    name: Option<Vec<String>>,
 
     #[clap(short, long, default_value_t = String::from("tracks.db"))]
     output: String,
@@ -76,16 +76,18 @@ fn add_track(conn: &Connection, data: Track) {
 fn main() {
     let args = Args::parse();
 
-    let filename = args.name.unwrap();
-    let geojson_file = Path::new(&filename);
-    let feature_collection = load_feature_collection(geojson_file);
+    let filenames = args.name.unwrap();
+    for filename in filenames {
+        let geojson_file = Path::new(&filename);
+        let feature_collection = load_feature_collection(geojson_file);
 
-    let filename = Path::new(&args.output);
-    let conn = get_db(filename);
+        let filename = Path::new(&args.output);
+        let conn = get_db(filename);
 
-    for f in feature_collection.into_iter() {
-        let sf = feature_to_sfline(f);
-        println!("ADDING: {}", sf.name);
-        add_track(&conn, sf);
+        for f in feature_collection.into_iter() {
+            let sf = feature_to_sfline(f);
+            println!("ADDING: {}", sf.name);
+            add_track(&conn, sf);
+        }
     }
 }
