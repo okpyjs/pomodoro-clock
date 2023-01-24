@@ -203,10 +203,20 @@ async fn updater(ctx: eframe::egui::Context, model: DashboardModel) {
         }
     });
 
-    send!(ctx, model, status, String::from("Running"));
     // Our receive loop, get a message from the racebox, send it to our app
     let session_mutex = Arc::clone(&model.session);
     let lap_mutex = Arc::clone(&model.lap.clone());
+
+    send!(ctx, model, status, String::from("Waiting for GPS fix"));
+    while let Some(msg) = rx.recv().await {
+        let rb_msg = decode_rb_message(&msg.value);
+
+        if rb_msg.is_valid_fix() {
+            break;
+        }
+    }
+
+    send!(ctx, model, status, String::from("Running"));
     while let Some(msg) = rx.recv().await {
         let rb_msg = decode_rb_message(&msg.value);
 
@@ -218,8 +228,6 @@ async fn updater(ctx: eframe::egui::Context, model: DashboardModel) {
         if logger.write(model.session_id, &rb_msg.to_json()).is_err() {
             continue; // do nothing for now
         }
-
-        // XXX below is untested
 
         let mut lap = lap_mutex.lock().unwrap();
         let coords = rb_msg.gps_coordinates();
