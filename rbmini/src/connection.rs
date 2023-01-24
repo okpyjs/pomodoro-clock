@@ -8,7 +8,7 @@ use uuid::{uuid, Uuid};
 
 const RACEBOX_LOCAL_NAME_PREFIX: &str = "RaceBox Mini ";
 
-// RaceBox mini characteristics
+// RaceBox mini characteristics and services
 #[allow(dead_code)]
 const DEVICE_INFO_CHAR: Uuid = uuid!("0000180a-0000-1000-8000-00805f9b34fb");
 #[allow(dead_code)]
@@ -52,7 +52,13 @@ impl RbManager {
         }
         let mut peripherals = Vec::new();
         for adapter in adapter_list.iter() {
-            if adapter.start_scan(ScanFilter::default()).await.is_err() {
+            if adapter
+                .start_scan(ScanFilter {
+                    services: vec![UART_SERVICE_CHAR],
+                })
+                .await
+                .is_err()
+            {
                 return Err(String::from("Failed to scan for adapters"));
             }
             time::sleep(Duration::from_secs(10)).await;
@@ -62,11 +68,23 @@ impl RbManager {
             }
         }
 
-        Ok(RbManager {
-            adapter_list,
-            manager,
-            peripherals,
-        })
+        for peripheral in peripherals.iter() {
+            let properties = peripheral.properties().await.unwrap();
+            let local_name = properties
+                .unwrap()
+                .local_name
+                .unwrap_or_else(|| String::from("unknown name"));
+
+            if local_name.starts_with(RACEBOX_LOCAL_NAME_PREFIX) {
+                return Ok(RbManager {
+                    adapter_list,
+                    manager,
+                    peripherals,
+                });
+            }
+        }
+
+        Err("Could not find a racebox mini".to_string())
     }
 
     pub async fn connect(&mut self) -> Result<RbConnection, String> {
@@ -82,7 +100,11 @@ impl RbManager {
                 continue;
             }
 
-            if !is_connected && peripheral.connect().await.is_err() {
+            if is_connected {
+                peripheral.disconnect().await.expect("Could not disconnect");
+            }
+
+            if peripheral.connect().await.is_err() {
                 continue;
             }
 

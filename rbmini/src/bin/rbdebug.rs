@@ -1,19 +1,34 @@
 use std::error::Error;
 use std::io::{self, Write};
+use std::time::Duration;
 use tokio::sync::mpsc;
+use tokio::time;
 
 use rbmini::connection::RbManager;
 use rbmini::message::{decode_rb_message, rb_checksum};
 
+async fn get_rb_manager() -> Result<RbManager, String> {
+    let mut attempts = 0;
+    loop {
+        println!("Attempting to get an RB device manager");
+        match RbManager::new().await {
+            Err(e) => {
+                println!("attempt failed");
+                attempts += 1;
+                if attempts == 3 {
+                    return Err(e);
+                }
+                continue;
+            }
+            Ok(rb) => return Ok(rb),
+        };
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     println!("Creating a new RbConnecting handler");
-    let mut rb = match RbManager::new().await {
-        Err(e) => {
-            panic!("{}", e);
-        }
-        Ok(rb) => rb,
-    };
+    let mut rb = get_rb_manager().await.unwrap();
 
     println!("connecting to racebox mini");
     let rc = match rb.connect().await {
@@ -30,6 +45,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             panic!("Stream failed: {}", err)
         }
     });
+
+    println!("Ready to go!!");
+
+    time::sleep(Duration::from_secs(5)).await;
 
     let mut checksum_failures = 0;
     loop {
