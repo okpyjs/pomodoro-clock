@@ -11,6 +11,7 @@ use tokio::runtime;
 use tokio::sync::mpsc;
 
 use logger::Logger;
+use rbmini::connection::RbConnection;
 use rbmini::connection::RbManager;
 use rbmini::message::{decode_rb_message, RbMessage};
 use timer::{Lap, LapType, Session};
@@ -138,10 +139,42 @@ impl eframe::App for DashboardApp {
     }
 }
 
+async fn get_rb_manager() -> Result<RbManager, String> {
+    let mut attempts = 0;
+    loop {
+        match RbManager::new().await {
+            Err(e) => {
+                attempts += 1;
+                if attempts == 3 {
+                    return Err(e);
+                }
+                continue;
+            }
+            Ok(rb) => return Ok(rb),
+        };
+    }
+}
+
+async fn get_rb_connection(mut rb: RbManager) -> Result<RbConnection, String> {
+    let mut attempts = 0;
+    loop {
+        match rb.connect().await {
+            Err(e) => {
+                attempts += 1;
+                if attempts == 3 {
+                    return Err(e);
+                }
+                continue;
+            }
+            Ok(conn) => return Ok(conn),
+        };
+    }
+}
+
 // For lack of a better name, this is the core logic
 async fn updater(ctx: eframe::egui::Context, model: DashboardModel) {
     send!(ctx, model, status, String::from("Creating RB Manager"));
-    let mut rb = match RbManager::new().await {
+    let rb = match get_rb_manager().await {
         Err(e) => {
             panic!("{}", e);
         }
@@ -149,12 +182,11 @@ async fn updater(ctx: eframe::egui::Context, model: DashboardModel) {
     };
 
     send!(ctx, model, status, String::from("Connecting to RB"));
-    let rc = match rb.connect().await {
+    let rc = match get_rb_connection(rb).await {
         Err(e) => {
-            send!(ctx, model, status, e);
-            panic!("Failed to connect to RB");
+            panic!("{}", e);
         }
-        Ok(conn) => conn,
+        Ok(rb) => rb,
     };
 
     // Create a logger to record telemetry to

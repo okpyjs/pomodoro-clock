@@ -46,8 +46,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
-    println!("Ready to go!!");
-
     time::sleep(Duration::from_secs(5)).await;
 
     let mut checksum_failures = 0;
