@@ -268,9 +268,13 @@ pub fn start() {
         ..Default::default()
     };
 
-    eframe::run_native(
+    if eframe::run_native(
         "Openlaps Dashboard",
         options,
         Box::new(|ctx| Box::new(DashboardApp::new(ctx))),
     )
+    .is_err()
+    {
+        println!("eframe exited abornmally");
+    }
 }
